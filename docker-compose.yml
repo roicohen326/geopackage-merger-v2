@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  mapproxy:
+    build: .
+    container_name: mapproxy-geopackage
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mapproxy/mapproxy.yaml:/mapproxy/mapproxy.yaml
+      - ./mapproxy/cache:/mapproxy/cache
+      - ./mapproxy/data:/mapproxy/data
+      - .:/workspace:ro
+    environment:
+      - MAPPROXY_PROCESSES=2
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-c"]
+    command: 
+      - |
+        set -euo pipefail
+        
+        # Copy GeoPackage files from workspace
+        echo "Copying GeoPackage files..."
+        find /workspace -name "*.gpkg" -exec cp {} /mapproxy/data/ \; 2>/dev/null || true
+        
+        # List available files for dynamic processing
+        echo "Available GeoPackage files:"
+        ls -la /mapproxy/data/*.gpkg 2>/dev/null || echo "No GeoPackage files found"
+        
+        # Dynamic merge: find first two .gpkg files and merge them
+        GPKG_FILES=($(find /mapproxy/data -name "*.gpkg" -type f | head -2))
+        
+        if [[ ${#GPKG_FILES[@]} -ge 2 && -f /workspace/dist/merge.js ]]; then
+          FILE1="${GPKG_FILES[0]}"
+          FILE2="${GPKG_FILES[1]}"
+          OUTPUT_FILE="/mapproxy/data/merged_data.gpkg"
+          
+          if [[ ! -f "$OUTPUT_FILE" ]]; then
+            echo "Running dynamic tile merge: $(basename "$FILE1") + $(basename "$FILE2")"
+            cd /workspace && node dist/merge.js "$FILE1" "$FILE2" "$OUTPUT_FILE"
+          else
+            echo "Merged file already exists: $(basename "$OUTPUT_FILE")"
+          fi
+        else
+          echo "Skipping merge: Need at least 2 GeoPackage files and merge script"
+        fi
+        
+        # Set proper ownership
+        chown -R mapproxy:mapproxy /mapproxy
+        
+        # Start MapProxy
+        echo "Starting MapProxy server..."
+        exec mapproxy-util serve-develop /mapproxy/mapproxy.yaml -b 0.0.0.0:8080
+
+  files:
+    image: filebrowser/filebrowser:latest
+    container_name: mapproxy-files
+    ports:
+      - "8081:80"
+    volumes:
+      - .:/srv:ro
+    environment:
+      - FB_NOAUTH=true
