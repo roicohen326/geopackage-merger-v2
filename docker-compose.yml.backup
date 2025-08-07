@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mapproxy:
+    build: .
+    container_name: mapproxy-geopackage
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mapproxy/mapproxy.yaml:/mapproxy/mapproxy.yaml
+      - ./mapproxy/cache:/mapproxy/cache
+      - ./mapproxy/data:/mapproxy/data
+      - .:/workspace:ro
+    environment:
+      - MAPPROXY_PROCESSES=2
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-c"]
+    command: 
+      - |
+        set -euo pipefail
+        find /workspace -name "*.gpkg" -exec cp {} /mapproxy/data/ \; 2>/dev/null || true
+        if [[ -f /workspace/dist/merge.js && -f /mapproxy/data/bluemar.gpkg && -f /mapproxy/data/Syria.gpkg ]]; then
+          cd /workspace && node dist/merge.js /mapproxy/data/bluemar.gpkg /mapproxy/data/Syria.gpkg /mapproxy/data/merged_data.gpkg
+        fi
+        chown -R mapproxy:mapproxy /mapproxy
+        exec mapproxy-util serve-develop /mapproxy/mapproxy.yaml -b 0.0.0.0:8080
+
+  files:
+    image: filebrowser/filebrowser:latest
+    container_name: mapproxy-files
+    ports:
+      - "8081:80"
+    volumes:
+      - .:/srv:ro
+    environment:
+      - FB_NOAUTH=true

@@ -1,0 +1,112 @@
+services:
+  demo:
+  wms:
+    srs: ['EPSG:4326', 'EPSG:3857']
+    image_formats: ['image/jpeg', 'image/png']
+    md:
+      title: GeoPackage Tile Server
+      abstract: Serving Blue Marble, Syria, and merged tile layers
+  wmts:
+    restful: true
+    kvp: true
+  tms:
+
+layers:
+  - name: layer1
+    title: First GeoPackage Layer
+    sources: [source1_cache]
+  
+  - name: layer2
+    title: Second GeoPackage Layer  
+    sources: [source2_cache]
+  
+  - name: composite
+    title: Composite Overlay
+    sources: [composite_cache]
+
+
+  
+  - name: merged
+    title: Merged Tiles (Auto-generated)
+    sources: [merged_cache]
+
+caches:
+  source1_cache:
+    sources: [source1_geopackage]
+    grids: [webmercator, geodetic]
+    cache:
+      type: sqlite
+      directory: /mapproxy/cache/source1
+    bulk_meta_tiles: true
+  
+  source2_cache:
+    sources: [source2_geopackage]
+    grids: [webmercator, geodetic]
+    cache:
+      type: sqlite  
+      directory: /mapproxy/cache/source2
+    bulk_meta_tiles: true
+  
+  composite_cache:
+    sources: [source1_geopackage, source2_geopackage]
+    grids: [webmercator, geodetic]
+    cache:
+      type: sqlite
+      directory: /mapproxy/cache/composite
+    bulk_meta_tiles: true
+  
+  merged_cache:
+    sources: [merged_geopackage]
+    grids: [webmercator, geodetic]
+    cache:
+      type: sqlite
+      directory: /mapproxy/cache/merged
+    bulk_meta_tiles: true
+
+sources:
+  source1_geopackage:
+    type: geopackage
+    filename: /mapproxy/data/*.gpkg  # MapProxy will find first available
+    # table: auto-detected
+  
+  source2_geopackage:
+    type: geopackage
+    filename: /mapproxy/data/*.gpkg  # MapProxy will find second available
+    # table: auto-detected
+  
+  merged_geopackage:
+    type: geopackage
+    filename: /mapproxy/data/merged_data.gpkg
+    # table: auto-detected
+
+grids:
+  webmercator:
+    base: GLOBAL_WEBMERCATOR
+  geodetic:
+    base: GLOBAL_GEODETIC
+
+globals:
+  cache:
+    base_dir: '/mapproxy/cache'
+  image:
+    resampling_method: bilinear
+    jpeg_quality: 90
+    formats:
+      image/jpeg:
+        encoding_options:
+          jpeg_quality: 90
+      image/png:
+        encoding_options:
+          quantizer: mediancut
+
+
+
+
+
+
+
+
+
+
+
+

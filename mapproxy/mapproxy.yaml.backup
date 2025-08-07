@@ -1,0 +1,73 @@
+services:
+  demo:
+  wms:
+    srs: &srs_list ['EPSG:4326', 'EPSG:3857']
+    bbox: &global_bbox [-180, -90, 180, 90]
+    bbox_srs: &bbox_srs 'EPSG:4326'
+    versions: ['1.1.1', '1.3.0']
+    image_formats: ['image/png', 'image/jpeg']
+  wmts:
+    tile_matrix_sets: &grid_list [webmercator, geodetic]
+  tms:
+    use_grid_names: true
+
+layers:
+  - name: bluemarble
+    title: Blue Marble World Imagery
+    sources: [bluemarble_cache]
+  - name: syria  
+    title: Syria Area Data
+    sources: [syria_cache]
+  - name: composite
+    title: Blue Marble with Syria Overlay
+    sources: [bluemarble_cache, syria_cache]
+  - name: merged
+    title: Merged Blue Marble + Syria Data
+    sources: [merged_cache]
+
+sources:
+  bluemarble_source: &gdal_source
+    type: gdal
+    datasource: '/mapproxy/data/bluemar.gpkg'
+    transparent: false
+  syria_source:
+    <<: *gdal_source
+    datasource: '/mapproxy/data/Syria.gpkg'
+    transparent: true
+  merged_source:
+    <<: *gdal_source
+    datasource: '/mapproxy/data/merged_data.gpkg'
+
+grids:
+  webmercator:
+    base: GLOBAL_WEBMERCATOR
+  geodetic:
+    base: GLOBAL_GEODETIC
+
+caches:
+  bluemarble_cache: &cache_template
+    grids: *grid_list
+    sources: [bluemarble_source]
+    cache:
+      type: file
+      directory: /mapproxy/cache/bluemarble
+  syria_cache:
+    <<: *cache_template
+    sources: [syria_source]
+    cache:
+      directory: /mapproxy/cache/syria
+  merged_cache:
+    <<: *cache_template
+    sources: [merged_source]
+    cache:
+      directory: /mapproxy/cache/merged
+
+globals:
+  cache:
+    base_dir: '/mapproxy/cache'
+    lock_dir: '/mapproxy/cache/tile_locks'
+  image:
+    resampling_method: bilinear
+    jpeg_quality: 90
+  http:
+    access_control_allow_origin: "*"
