@@ -294,7 +294,7 @@ try {
     const zoomLevels = targetDb.prepare(`SELECT DISTINCT zoom_level FROM "${outputTableName}" ORDER BY zoom_level`).all() as any[];
     const finalSize = (fs.statSync(finalOutputFilename).size / BYTES_TO_MB).toFixed(2);
     
-    console.log(`✅ Merge complete! ${merged2} tiles from ${file2Name}, ${merged1} from ${file1Name} → ${totalTiles.count} total tiles across zoom levels ${zoomLevels.map(z => z.zoom_level).join(', ')} • Output: ${finalOutputFilename} (${finalSize} MB)`);
+    console.log(`Merge complete! ${merged2} tiles from ${file2Name}, ${merged1} from ${file1Name} → ${totalTiles.count} total tiles across zoom levels ${zoomLevels.map(z => z.zoom_level).join(', ')} • Output: ${finalOutputFilename} (${finalSize} MB)`);
     
   } finally {
     targetDb.close();
