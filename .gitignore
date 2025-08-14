@@ -1,0 +1,13 @@
+# Ignore dependency folders
+node_modules/
+
+# Ignore GeoPackage files and related temp files
+*.gpkg
+*.gpkg-shm
+*.gpkg-wal
+*.gpkg-journal
+
+# Ignore MapProxy cache/logs/data (if applicable)
+mapproxy/cache/
+mapproxy/logs/
+mapproxy/data/
