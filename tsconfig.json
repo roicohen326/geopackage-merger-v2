@@ -16,7 +16,7 @@
   },
   "include": [
     "*.ts"
-  ],
+, "tests/getTableColumns.test.ts", "tests/findTileTable.test.ts", "tests/getDataTables.test.ts", "tests/mergeTileData.test.ts", "tests/errorHandling.test.ts", "tests/emptyFileHandling.test.ts", "tests/createTileTable.test.ts", "tests/copyTileMetadata.test.ts"  ],
   "exclude": [
     "node_modules",
     "dist"
