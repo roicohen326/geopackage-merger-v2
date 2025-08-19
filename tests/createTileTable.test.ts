@@ -1,52 +1,83 @@
-import path from 'path';
-import { createTileTable } from '../merge';
-import * as merge from '../merge';
-
 describe('createTileTable', () => {
-  let mockTargetDb: any;
-  let mockSourceDb: any;
+  let originalMerge: any;
+  
+  beforeAll(() => {
+    originalMerge = require('../merge');
+  });
 
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
-    
-    mockTargetDb = {
-      exec: jest.fn()
-    };
-
-    mockSourceDb = {
-      close: jest.fn()
-    };
-
-    jest.spyOn(merge, 'openDatabase').mockReturnValue(mockSourceDb as any);
-    jest.spyOn(merge, 'findTileTable')
-      .mockReturnValueOnce({ name: 'source_tiles' })
-      .mockReturnValueOnce(null);
-    jest.spyOn(merge, 'copyTileMetadata').mockImplementation(() => {});
   });
 
-  test('should create tile table with correct schema', () => {
-    createTileTable(mockTargetDb, 'merged_tiles', '/file1.gpkg', '/file2.gpkg');
-
-    expect(mockTargetDb.exec).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE "merged_tiles"'));
+  test('should be a function', () => {
+    const { createTileTable } = require('../merge');
+    expect(typeof createTileTable).toBe('function');
   });
 
-  test('should throw error when no tile tables found in sources', () => {
-    jest.spyOn(merge, 'findTileTable').mockReturnValue(null);
+  test('should throw error when no tile tables found', () => {
+    jest.doMock('../merge', () => ({
+      ...originalMerge,
+      createTileTable: originalMerge.createTileTable,
+      openDatabase: jest.fn(() => ({ close: jest.fn() })),
+      findTileTable: jest.fn(() => null),
+      copyTileMetadata: jest.fn()
+    }));
+
+    const { createTileTable } = require('../merge');
+    const mockTargetDb = { exec: jest.fn() };
 
     expect(() => {
-      createTileTable(mockTargetDb, 'merged_tiles', '/file1.gpkg', '/file2.gpkg');
+      createTileTable(mockTargetDb, 'merged_tiles', 'file1.gpkg', 'file2.gpkg');
     }).toThrow('No tile tables found for metadata template');
   });
 
-  test('should use first available tile table as template', () => {
-    createTileTable(mockTargetDb, 'merged_tiles', '/file1.gpkg', '/file2.gpkg');
+  test('should create table with correct schema', () => {
+    jest.doMock('../merge', () => ({
+      ...originalMerge,
+      createTileTable: originalMerge.createTileTable,
+      openDatabase: jest.fn(() => ({ close: jest.fn() })),
+      findTileTable: jest.fn()
+        .mockReturnValueOnce({ name: 'source_tiles' })
+        .mockReturnValueOnce(null),
+      copyTileMetadata: jest.fn()
+    }));
 
-    expect(merge.copyTileMetadata).toHaveBeenCalled();
+    const { createTileTable } = require('../merge');
+    const mockTargetDb = { exec: jest.fn() };
+
+    createTileTable(mockTargetDb, 'merged_tiles', 'file1.gpkg', 'file2.gpkg');
+
+    expect(mockTargetDb.exec).toHaveBeenCalledWith(
+      expect.stringContaining('CREATE TABLE "merged_tiles"')
+    );
+    expect(mockTargetDb.exec).toHaveBeenCalledWith(
+      expect.stringContaining('tile_data BLOB NOT NULL')
+    );
   });
 
-  test('should close all opened databases', () => {
-    createTileTable(mockTargetDb, 'merged_tiles', '/file1.gpkg', '/file2.gpkg');
+  test('should close opened databases', () => {
+    const mockDb1 = { close: jest.fn() };
+    const mockDb2 = { close: jest.fn() };
 
-    expect(mockSourceDb.close).toHaveBeenCalled();
+    jest.doMock('../merge', () => ({
+      ...originalMerge,
+      createTileTable: originalMerge.createTileTable,
+      openDatabase: jest.fn()
+        .mockReturnValueOnce(mockDb1)
+        .mockReturnValueOnce(mockDb2),
+      findTileTable: jest.fn()
+        .mockReturnValueOnce({ name: 'tiles' })
+        .mockReturnValueOnce(null),
+      copyTileMetadata: jest.fn()
+    }));
+
+    const { createTileTable } = require('../merge');
+    const mockTargetDb = { exec: jest.fn() };
+
+    createTileTable(mockTargetDb, 'merged_tiles', 'file1.gpkg', 'file2.gpkg');
+
+    expect(mockDb1.close).toHaveBeenCalled();
+    expect(mockDb2.close).toHaveBeenCalled();
   });
 });

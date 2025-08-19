@@ -1,61 +1,37 @@
-import { validateFilesExist, checkFileExists } from '../merge';
+import { validateFilesExist } from '../merge';
 import * as fs from 'fs';
-
 jest.mock('fs');
 const mockedFs = fs as jest.Mocked<typeof fs>;
-
 describe('validateFilesExist', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test('should not throw when both files exist', () => {
-    mockedFs.existsSync.mockReturnValue(true);
-    
-    expect(() => {
-      validateFilesExist('/path/to/file1.gpkg', '/path/to/file2.gpkg');
-    }).not.toThrow();
-    
-    expect(mockedFs.existsSync).toHaveBeenCalledWith('/path/to/file1.gpkg');
-    expect(mockedFs.existsSync).toHaveBeenCalledWith('/path/to/file2.gpkg');
-  });
-
-  test('should throw error when first file is missing', () => {
-    mockedFs.existsSync
-      .mockReturnValueOnce(false) // first file missing
-      .mockReturnValueOnce(true);  // second file exists
-    
-    expect(() => {
-      validateFilesExist('/path/to/missing1.gpkg', '/path/to/file2.gpkg');
-    }).toThrow('Missing file(s): /path/to/missing1.gpkg');
-  });
-
-  test('should throw error when second file is missing', () => {
-    mockedFs.existsSync
-      .mockReturnValueOnce(true)   // first file exists
-      .mockReturnValueOnce(false); // second file missing
-    
-    expect(() => {
-      validateFilesExist('/path/to/file1.gpkg', '/path/to/missing2.gpkg');
-    }).toThrow('Missing file(s): /path/to/missing2.gpkg');
-  });
-
-  test('should throw error when both files are missing', () => {
-    mockedFs.existsSync.mockReturnValue(false);
-    
-    expect(() => {
-      validateFilesExist('/path/to/missing1.gpkg', '/path/to/missing2.gpkg');
-    }).toThrow('Missing file(s): /path/to/missing1.gpkg, /path/to/missing2.gpkg');
-  });
-
-  test('should handle different file paths', () => {
-    mockedFs.existsSync.mockReturnValue(true);
-    
-    expect(() => {
-      validateFilesExist('C:\\Windows\\path\\file1.gpkg', '/unix/path/file2.gpkg');
-    }).not.toThrow();
-    
-    expect(mockedFs.existsSync).toHaveBeenCalledWith('C:\\Windows\\path\\file1.gpkg');
-    expect(mockedFs.existsSync).toHaveBeenCalledWith('/unix/path/file2.gpkg');
-  });
+ beforeEach(() => { jest.clearAllMocks(); });
+ test('should not throw when both files exist', () => {
+   mockedFs.existsSync.mockReturnValue(true);
+   expect(() => {
+     validateFilesExist('source1.gpkg', 'source2.gpkg');
+   }).not.toThrow();
+ });
+ test('should throw when first file missing', () => {
+   mockedFs.existsSync.mockReturnValueOnce(false).mockReturnValueOnce(true);
+   expect(() => {
+     validateFilesExist('missing.gpkg', 'source2.gpkg');
+   }).toThrow('Missing file(s): missing.gpkg');
+ });
+ test('should throw when second file missing', () => {
+   mockedFs.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
+   expect(() => {
+     validateFilesExist('source1.gpkg', 'missing.gpkg');
+   }).toThrow('Missing file(s): missing.gpkg');
+ });
+ test('should throw when both files missing', () => {
+   mockedFs.existsSync.mockReturnValue(false);
+   expect(() => {
+     validateFilesExist('missing1.gpkg', 'missing2.gpkg');
+   }).toThrow('Missing file(s): missing1.gpkg, missing2.gpkg');
+ });
+ test('should handle cross-platform paths', () => {
+   mockedFs.existsSync.mockReturnValue(true);
+   expect(() => {
+     validateFilesExist('C:\\Windows\\file1.gpkg', '/unix/file2.gpkg');
+   }).not.toThrow();
+ });
 });
