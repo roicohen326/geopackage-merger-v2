@@ -327,4 +327,5 @@ Examples:
     const exitCode = error.status === StatusCodes.BAD_REQUEST ? 1 : 2;
     process.exit(exitCode);
   }
+
 }
