@@ -1,2 +1,0 @@
-# simple-geopackage-merge
-# comman

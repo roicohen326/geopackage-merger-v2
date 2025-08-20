@@ -1,0 +1,31 @@
+# Ignore dependencies
+node_modules/
+dist/
+
+# Ignore GeoPackage files and SQLite temp files
+*.gpkg
+*.gpkg-shm
+*.gpkg-wal
+*.gpkg-journal
+
+# Ignore test fixtures (GeoPackages for unit tests)
+tests/fixtures/*.gpkg
+tests/fixtures/*.gpkg-shm
+tests/fixtures/*.gpkg-wal
+tests/fixtures/*.gpkg-journal
+
+# Ignore MapProxy artifacts (cache/logs/temp configs)
+mapproxy/cache/
+mapproxy/logs/
+mapproxy/data/
+mapproxy/*.sqlite
+mapproxy/*.db
+
+# Ignore Docker volumes and build artifacts
+docker-data/
+*.pid
+*.log
+
+# Ignore system files
+.DS_Store
+Thumbs.db
