@@ -6,3 +6,11 @@ export const simpleColumn = (name: string, type: string = 'TEXT') => ({
   dflt_value: null, 
   pk: 0 
 });
+export const fakeDb = () => ({
+  close: jest.fn(),
+  prepare: jest.fn(() => ({
+    all: jest.fn(() => []),
+    get: jest.fn(() => undefined),
+    run: jest.fn(() => undefined),
+  })),
+}) as any;
