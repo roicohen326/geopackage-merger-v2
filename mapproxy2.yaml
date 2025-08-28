@@ -1,0 +1,30 @@
+services:
+  demo: {}
+  tms: {}
+  wmts: {}
+  wms:
+    srs: ['EPSG:4326']
+    image_formats: ['image/png','image/jpeg']
+
+layers:
+  - name: merged
+    title: Merged Tiles (EPSG:4326)
+    sources: [merged_cache]
+
+caches:
+  merged_cache:
+    grids: [wgs84geo256]   # <- use the custom grid below
+    sources: []
+    cache:
+      type: geopackage
+      filename: /data/merged.gpkg
+      table_name: merged_tiles
+
+grids:
+  wgs84geo256:              # EPSG:4326 pyramid with 2 tiles at level 0
+    srs: EPSG:4326
+    bbox: [-180.0, -90.0, 180.0, 90.0]
+    origin: ul
+    tile_size: [256, 256]
+    min_res: 0.703125       # level 0 = 0.703125°/px
+    num_levels: 21        
